@@ -1,0 +1,89 @@
+name: AutoSE Agentic SDLC Workflow
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: autose-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  autose-sdlc:
+    name: Autonomous Issue-to-PR SDLC Pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Trigger conditions:
+    # 1. Issue labeled with 'autose'
+    # 2. Or issue/PR comment starting with '/autose'
+    if: >-
+      (github.event_name == 'issues' && github.event.label.name == 'autose') ||
+      (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/autose'))
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Actor Authorization
+        id: auth_check
+        run: |
+          AUTHOR="${{ github.actor }}"
+          ASSOCIATION="${{ github.event.comment.author_association || github.event.issue.author_association }}"
+          echo "Triggered by $AUTHOR with association: $ASSOCIATION"
+
+          if [[ "$ASSOCIATION" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; then
+            echo "Actor $AUTHOR is authorized."
+          else
+            echo "::error::Unauthorized: Actor $AUTHOR does not have write/collaborator access."
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          if [ -f "pyproject.toml" ]; then
+            pip install -e .
+          fi
+
+      - name: Run Baseline Test Suite
+        run: |
+          pytest -v
+
+      - name: Run Agentic SDLC Pipeline
+        id: run_pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python workflow/runner.py \
+            --issue-number "$ISSUE_NUMBER" \
+            --issue-title "$ISSUE_TITLE" \
+            --issue-body "$ISSUE_BODY" \
+            --workspace "."
+
+      - name: Upload SDLC Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autose-artifacts-issue-${{ github.event.issue.number }}
+          path: .autose/
+          retention-days: 14
