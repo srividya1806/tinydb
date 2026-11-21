@@ -41,7 +41,7 @@ jobs:
           ASSOCIATION="${{ github.event.comment.author_association || github.event.issue.author_association }}"
           echo "Triggered by $AUTHOR with association: $ASSOCIATION"
 
-          if [[ "$ASSOCIATION" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; then
+          if [[ "$AUTHOR" == "${{ github.repository_owner }}" || "$ASSOCIATION" =~ ^(OWNER|MEMBER|COLLABORATOR)$ ]]; then
             echo "Actor $AUTHOR is authorized."
           else
             echo "::error::Unauthorized: Actor $AUTHOR does not have write/collaborator access."
@@ -58,10 +58,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-cov
           if [ -f "pyproject.toml" ]; then
-            pip install -e .
+            pip install -e . || true
           fi
 
       - name: Run Baseline Test Suite
+        env:
+          PYTHONPATH: "."
         run: |
           pytest -v
 
@@ -70,6 +72,8 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONPATH: "."
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}

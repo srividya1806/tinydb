@@ -196,10 +196,10 @@ Closes #{issue_number}
             try:
                 subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
                 subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
-                subprocess.run(["git", "checkout", "-b", branch_name], check=True)
+                subprocess.run(["git", "checkout", "-B", branch_name], check=True)
                 subprocess.run(["git", "add", "tinydb/", "tests/"], check=True)
-                subprocess.run(["git", "commit", "-m", pr_title], check=True)
-                subprocess.run(["git", "push", "-u", "origin", branch_name], check=True)
+                subprocess.run(["git", "commit", "-m", pr_title, "--allow-empty"], check=True)
+                subprocess.run(["git", "push", "-u", "origin", branch_name, "--force"], check=True)
                 # Create PR via gh CLI
                 gh_proc = subprocess.run(
                     ["gh", "pr", "create", "--title", pr_title, "--body", pr_body, "--head", branch_name],
@@ -208,6 +208,15 @@ Closes #{issue_number}
                 )
                 if gh_proc.returncode == 0:
                     pr_url = gh_proc.stdout.strip()
+                else:
+                    # Fetch existing PR URL if already created
+                    view_proc = subprocess.run(
+                        ["gh", "pr", "view", branch_name, "--json", "url", "-q", ".url"],
+                        capture_output=True,
+                        text=True,
+                    )
+                    if view_proc.returncode == 0 and view_proc.stdout.strip():
+                        pr_url = view_proc.stdout.strip()
             except Exception as e:
                 print(f"[Release Warning] Git / gh PR creation: {e}", file=sys.stderr)
 
@@ -233,12 +242,27 @@ Closes #{issue_number}
 
         self.save_artifact("review.md", review_md)
 
+        # On GitHub Actions, post the review comment to the PR
+        branch_name = f"autose/issue-{self.state.get('issue_number', 1)}"
+        if not self.dry_run and os.environ.get("GITHUB_ACTIONS"):
+            try:
+                verdict = decision.get("verdict", "REQUEST_CHANGES")
+                gh_arg = "--approve" if verdict == "APPROVE" else "--comment"
+                subprocess.run(
+                    ["gh", "pr", "review", branch_name, gh_arg, "--body", review_md],
+                    capture_output=True,
+                    text=True,
+                )
+            except Exception as e:
+                print(f"[Review Warning] Could not post PR review via gh: {e}", file=sys.stderr)
+
         # Gate 6 verification check
         ok, msg = ReviewerAgent.verify(decision, self.state["review_rounds"], self.max_review_rounds)
         print(f"[Gate 6 Check] {msg}")
         return ok, decision
 
     def run(self, issue_title: str, issue_body: str, issue_number: int = 1):
+        self.state["issue_number"] = issue_number
         print(f"Starting SDLC Autonomous Pipeline for Issue #{issue_number}: {issue_title}")
 
         # Stage 1: Requirements
