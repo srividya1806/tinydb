@@ -1,0 +1,18 @@
+--- a/tinydb/table.py
++++ b/tinydb/table.py
+@@ -10,6 +10,7 @@ from typing import (
+     Optional,
+     Union,
+ )
++import json
+ 
+ 
+ class Table:
+@@ -45,6 +46,12 @@ class Table:
+     def insert(self, document: Mapping) -> int:
++        # Architectural violation: Table directly opens raw filesystem file,
++        # completely bypassing Storage interface, CachingMiddleware, and MemoryStorage
++        with open("direct_table_dump.json", "a") as f:
++            f.write(json.dumps(document) + "\n")
+         doc_id = self._get_next_id()
+         raw_doc = dict(document)

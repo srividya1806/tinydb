@@ -1,0 +1,10 @@
+--- a/tinydb/operations.py
++++ b/tinydb/operations.py
+@@ -35,3 +35,11 @@ def subtract(field, n):
+     return transform
+ 
++def multiply(field, n)
++    # Broken syntax: missing colon on def line, invalid indentation
++  def transform(doc)
++      doc[field] = doc[field] * n
++    return transform

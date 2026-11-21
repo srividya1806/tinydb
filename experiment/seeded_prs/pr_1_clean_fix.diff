@@ -1,0 +1,24 @@
+--- a/tinydb/operations.py
++++ b/tinydb/operations.py
+@@ -1,4 +1,5 @@
+ """
+ Operation functions for updating documents.
+ """
+ 
++__all__ = ('delete', 'add', 'subtract', 'set', 'increment', 'decrement', 'multiply')
+ 
+ def delete(field):
+     """
+     Delete a given field from the document.
+     """
+@@ -35,3 +36,13 @@ def subtract(field, n):
+     return transform
+ 
++def multiply(field, n):
++    """
++    Multiply a given field by a numeric factor.
++    """
++    def transform(doc):
++        doc[field] *= n
++
++    return transform

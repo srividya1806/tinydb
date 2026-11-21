@@ -1,0 +1,12 @@
+--- a/tinydb/table.py
++++ b/tinydb/table.py
+@@ -100,6 +100,10 @@ class Table:
+     def update_multiple(self, updates):
+         updated_ids = []
++        # Defect: assumes updates is always a list or sliceable sequence,
++        # crashes with TypeError: 'generator' object is not subscriptable
++        first_update = updates[0]
++        # Missing generator reset or conversion to list
+         for cond, doc_updater in updates:
+             for doc_id, doc in self._read_table().items():
+                 if cond(doc):
