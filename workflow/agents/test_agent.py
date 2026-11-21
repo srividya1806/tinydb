@@ -1,7 +1,7 @@
 """Testing Agent (Stage 4): Writes tests for acceptance criteria and runs full suite."""
 
 import re
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 from workflow.lib.gemini_client import GeminiClient
 from workflow.lib.tools import ToolHarness
 
@@ -30,10 +30,10 @@ Do not include commentary outside the code block.
 class TestAgent:
     __test__ = False
 
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: Optional[str] = None):
         self.client = client
         self.harness = harness
-        self.model = model
+        self.model = model or client.default_model
 
     def run(self, spec_content: str, diff_content: str) -> Tuple[str, Dict[str, Any]]:
         prompt = f"""Write complete pytest unit tests verifying every acceptance criterion in the specification.

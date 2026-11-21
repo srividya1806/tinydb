@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 from workflow.lib.gemini_client import GeminiClient
 from workflow.lib.tools import ToolHarness
 
@@ -33,10 +33,10 @@ List every file and function/class to be modified or created. Format as:
 
 
 class DesignAgent:
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: Optional[str] = None):
         self.client = client
         self.harness = harness
-        self.model = model
+        self.model = model or client.default_model
 
     def run(self, spec_content: str, feedback: str = "") -> str:
         arch_content = self.harness.read_file("ARCHITECTURE.md", max_lines=400)

@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 from workflow.lib.gemini_client import GeminiClient
 from workflow.lib.tools import ToolHarness
 
@@ -40,10 +40,10 @@ If ANY blocking issues or unhandled edge cases exist, your verdict MUST be `REQU
 
 
 class ReviewerAgent:
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: Optional[str] = None):
         self.client = client
         self.harness = harness
-        self.model = model
+        self.model = model or client.default_model
 
     def run(self, issue_title: str, issue_body: str, diff_content: str) -> Tuple[str, Dict[str, Any]]:
         arch_overview = self.harness.read_file("ARCHITECTURE.md", max_lines=300)

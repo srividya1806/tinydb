@@ -3,7 +3,7 @@
 import ast
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from workflow.lib.gemini_client import GeminiClient
 from workflow.lib.tools import ToolHarness
 
@@ -26,10 +26,10 @@ You may provide multiple ```file:path...``` blocks if multiple files need change
 
 
 class ImplementationAgent:
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: Optional[str] = None):
         self.client = client
         self.harness = harness
-        self.model = model
+        self.model = model or client.default_model
 
     def run(self, design_content: str, spec_content: str, error_feedback: str = "") -> Tuple[str, List[str]]:
         # Identify target files from design

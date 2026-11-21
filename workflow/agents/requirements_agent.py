@@ -1,7 +1,7 @@
 """Requirements Agent (Stage 1): Ingests issue and outputs spec.md with testable acceptance criteria."""
 
 import re
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 from workflow.lib.gemini_client import GeminiClient
 from workflow.lib.tools import ToolHarness
 
@@ -35,10 +35,10 @@ List each acceptance criterion explicitly numbered (AC-1, AC-2, etc.) using Give
 
 
 class RequirementsAgent:
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: Optional[str] = None):
         self.client = client
         self.harness = harness
-        self.model = model
+        self.model = model or client.default_model
 
     def run(self, issue_title: str, issue_body: str) -> str:
         prompt = f"""Please analyze the following GitHub issue and generate the specification document (spec.md).
