@@ -1,5 +1,5 @@
 from tinydb import where
-from tinydb.operations import delete, increment, decrement, add, subtract, set
+from tinydb.operations import delete, increment, decrement, add, subtract, multiply, set
 
 
 def test_delete(db):
@@ -20,6 +20,21 @@ def test_add_str(db):
 def test_subtract(db):
     db.update(subtract('int', 5), where('char') == 'a')
     assert db.get(where('char') == 'a')['int'] == -4
+
+
+def test_multiply(db):
+    db.update(set('int', 3), where('char') == 'a')
+    db.update(multiply('int', 4), where('char') == 'a')
+    assert db.get(where('char') == 'a')['int'] == 12
+
+    db.update(multiply('int', 0.5), where('char') == 'a')
+    assert db.get(where('char') == 'a')['int'] == 6.0
+
+    db.update(multiply('int', -2), where('char') == 'a')
+    assert db.get(where('char') == 'a')['int'] == -12.0
+
+    db.update(multiply('int', 0), where('char') == 'a')
+    assert db.get(where('char') == 'a')['int'] == 0.0
 
 
 def test_set(db):

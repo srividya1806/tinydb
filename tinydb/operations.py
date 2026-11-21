@@ -13,6 +13,17 @@ from collections.abc import Callable, MutableMapping
 from typing import Any, Union
 
 
+__all__ = (
+    'delete',
+    'add',
+    'subtract',
+    'multiply',
+    'set',
+    'increment',
+    'decrement',
+)
+
+
 def delete(field: str) -> Callable[[MutableMapping], None]:
     """
     Delete a given field from the document.
@@ -41,6 +52,16 @@ def subtract(field: str, n: Union[int, float]) -> Callable[[MutableMapping], Non
     """
     def transform(doc: MutableMapping):
         doc[field] -= n
+
+    return transform
+
+
+def multiply(field: str, n: Union[int, float]) -> Callable[[MutableMapping], None]:
+    """
+    Multiply a given field in the document by ``n``.
+    """
+    def transform(doc: MutableMapping):
+        doc[field] *= n
 
     return transform
 
