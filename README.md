@@ -3,7 +3,7 @@
 **Student Roll Number:** 2025204020  
 **Target Repository Fork:** [https://github.com/srividya1806/tinydb](https://github.com/srividya1806/tinydb)  
 **Pinned Upstream Commit:** `edff96a` (`msiemens/tinydb@edff96a`)  
-**Demo Video:** [https://youtu.be/placeholder-demo-a3](https://youtu.be/placeholder-demo-a3) (see `demo.mp4` / video link)
+**Demo Video:** [demo.mp4](./demo.mp4) (4m 42s walkthrough of Issue #3, Run #44879709730, PR #6, and 2-round review backtrack)
 
 ---
 
