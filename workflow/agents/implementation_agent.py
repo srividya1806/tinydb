@@ -32,11 +32,21 @@ class ImplementationAgent:
         self.model = model or client.default_model
 
     def run(self, design_content: str, spec_content: str, error_feedback: str = "") -> Tuple[str, List[str]]:
-        # Identify target files from design
-        file_matches = list(set(re.findall(r"`([a-zA-Z0-9_\-\./]+\.py)`", design_content)))
+        # Identify target files from design with flexible regex
+        raw_matches = re.findall(r"([a-zA-Z0-9_\-\./]+\.py)", design_content)
+        file_matches = list(set([f.strip("`'\" ") for f in raw_matches if not f.endswith(".md")]))
         
-        target_file_contexts = []
+        # Prioritize files that actually exist in tinydb/ or tests/
+        valid_targets = []
         for f in file_matches:
+            if (self.harness.workspace_root / f).exists():
+                valid_targets.append(f)
+            elif (self.harness.workspace_root / "tinydb" / Path(f).name).exists():
+                valid_targets.append(f"tinydb/{Path(f).name}")
+        valid_targets = list(set(valid_targets)) or ["tinydb/table.py"]
+
+        target_file_contexts = []
+        for f in valid_targets:
             content = self.harness.read_file(f, max_lines=600)
             if not content.startswith("Error"):
                 target_file_contexts.append(f"### Current Content of `{f}`:\n```python\n{content}\n```")
@@ -67,7 +77,13 @@ class ImplementationAgent:
 
         # Parse file blocks and apply them
         modified_files = []
-        file_blocks = re.findall(r"```file:([^\n]+)\n(.*?)```", response_text, re.DOTALL)
+        file_blocks = re.findall(r"```(?:file:)?([a-zA-Z0-9_\-\./]+\.py)\n(.*?)```", response_text, re.DOTALL)
+        if not file_blocks:
+            # Fallback: if single python block and single target file
+            py_blocks = re.findall(r"```python\n(.*?)```", response_text, re.DOTALL)
+            if py_blocks and len(valid_targets) == 1:
+                file_blocks = [(valid_targets[0], py_blocks[0])]
+
         for rel_path, new_content in file_blocks:
             rel_path = rel_path.strip()
             self.harness.write_file(rel_path, new_content)

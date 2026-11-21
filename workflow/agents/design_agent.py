@@ -71,17 +71,29 @@ class DesignAgent:
         if not design_content or len(design_content.strip()) < 100:
             return False, "Gate 2 Failed: design.md is empty or trivially short."
 
-        if "Target Files" not in design_content:
+        # Verify section presence with case-insensitive flexible regex
+        has_section = bool(re.search(r"(target\s+files|files\s+and\s+functions|files\s+to\s+(change|modify)|affected\s+files)", design_content, re.IGNORECASE))
+        if not has_section:
             return False, "Gate 2 Failed: Missing 'Target Files and Functions' section."
 
-        # Find file references like `tinydb/...`
-        file_matches = re.findall(r"`([a-zA-Z0-9_\-\./]+\.py)`", design_content)
-        if not file_matches:
-            return False, "Gate 2 Failed: No explicit Python file paths (`*.py`) named in design."
+        # Find file references like `tinydb/...` or *.py with or without backticks
+        file_matches = re.findall(r"([a-zA-Z0-9_\-\./]+\.py)", design_content)
+        cleaned_matches = [f.strip("`'\" ") for f in file_matches if not f.endswith(".md")]
+        if not cleaned_matches:
+            return False, "Gate 2 Failed: No explicit Python file paths (*.py) named in design."
 
         # Verify that at least one named file exists in the codebase or has valid target location
-        existing_targets = [f for f in file_matches if (workspace_root / f).exists()]
+        existing_targets = [f for f in cleaned_matches if (workspace_root / f).exists()]
         if not existing_targets:
-            return False, f"Gate 2 Failed: None of the named target files exist in repository: {file_matches}"
+            # Also check if any file in tinydb/ or tests/ matches by filename
+            for f in cleaned_matches:
+                base_name = Path(f).name
+                if (workspace_root / "tinydb" / base_name).exists():
+                    existing_targets.append(f"tinydb/{base_name}")
+                elif (workspace_root / "tests" / base_name).exists():
+                    existing_targets.append(f"tests/{base_name}")
 
-        return True, f"Gate 2 Passed: Verified target files exist: {existing_targets}"
+        if not existing_targets:
+            return False, f"Gate 2 Failed: None of the named target files exist in repository: {cleaned_matches[:5]}"
+
+        return True, f"Gate 2 Passed: Verified target files exist: {list(set(existing_targets))}"

@@ -55,12 +55,22 @@ class SDLCOrchestrator:
         path = self.artifact_dir / filename
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
+        # Also mirror to non-hidden artifacts/ directory
+        mirror_dir = self.workspace_dir / "artifacts"
+        mirror_dir.mkdir(parents=True, exist_ok=True)
+        with open(mirror_dir / filename, "w", encoding="utf-8") as f:
+            f.write(content)
         self.state["artifacts"][filename] = str(path.relative_to(self.workspace_dir))
         print(f"[Orchestrator] Saved artifact: {filename} ({len(content)} bytes)")
 
     def save_state(self):
         state_path = self.artifact_dir / "state.json"
         with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(self.state, f, indent=2)
+        # Mirror state.json to artifacts/
+        mirror_dir = self.workspace_dir / "artifacts"
+        mirror_dir.mkdir(parents=True, exist_ok=True)
+        with open(mirror_dir / "state.json", "w", encoding="utf-8") as f:
             json.dump(self.state, f, indent=2)
 
     def execute_stage_1_requirements(self, issue_title: str, issue_body: str) -> str:
@@ -95,23 +105,31 @@ class SDLCOrchestrator:
         self.state["stage"] = "STAGE_2_DESIGN"
         self.save_state()
 
-        if self.dry_run:
-            design_content = "# Design Plan\n\n## 1. Architectural Alignment\nAligned with tinydb architecture.\n\n## 2. Target Files and Functions to Change\n- `tinydb/table.py`: `update_multiple()`\n\n## 3. Step-by-Step Implementation Strategy\n1. Modify function.\n"
-        else:
-            agent = DesignAgent(self.client, self.harness)
-            design_content = agent.run(spec_content, feedback=feedback)
+        design_content = ""
+        last_msg = ""
+        current_feedback = feedback
 
-        # Gate 2 verification check
-        ok, msg = DesignAgent.verify(design_content, self.workspace_dir)
-        print(f"[Gate 2 Check] {msg}")
-        if not ok:
-            self.state["status"] = "FAILED_STAGE_2"
-            self.save_artifact("design.md", design_content)
-            self.save_state()
-            raise RuntimeError(f"Gate 2 Check Failed: {msg}")
+        for attempt in range(1, 3):
+            if self.dry_run:
+                design_content = "# Design Plan\n\n## 1. Architectural Alignment\nAligned with tinydb architecture.\n\n## 2. Target Files and Functions to Change\n- `tinydb/table.py`: `update_multiple()`\n\n## 3. Step-by-Step Implementation Strategy\n1. Modify function.\n"
+            else:
+                agent = DesignAgent(self.client, self.harness)
+                design_content = agent.run(spec_content, feedback=current_feedback)
 
+            # Gate 2 verification check
+            ok, msg = DesignAgent.verify(design_content, self.workspace_dir)
+            print(f"[Gate 2 Check] Attempt {attempt}: {msg}")
+            if ok:
+                self.save_artifact("design.md", design_content)
+                return design_content
+
+            last_msg = msg
+            current_feedback = f"Previous design attempt failed validation: {msg}. You MUST explicitly name the target Python files to change (e.g. `tinydb/table.py`) under a section titled '## 2. Target Files and Functions to Change'."
+
+        self.state["status"] = "FAILED_STAGE_2"
         self.save_artifact("design.md", design_content)
-        return design_content
+        self.save_state()
+        raise RuntimeError(f"Gate 2 Check Failed: {last_msg}")
 
     def execute_stage_3_implementation(
         self, design_content: str, spec_content: str, error_feedback: str = ""

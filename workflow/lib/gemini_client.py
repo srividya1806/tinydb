@@ -50,7 +50,7 @@ class GeminiClient:
             raise ValueError("GEMINI_API_KEY is not set. Please provide a valid Gemini API key.")
 
         preferred_model = model or self.default_model
-        candidate_models = list(dict.fromkeys([preferred_model, "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"]))
+        candidate_models = list(dict.fromkeys([preferred_model, "gemini-flash-latest", "gemini-pro-latest", "gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-1.5-flash"]))
 
         # Check if candidate models work, otherwise fetch dynamic list
         attempted = set()

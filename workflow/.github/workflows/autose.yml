@@ -89,5 +89,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: autose-artifacts-issue-${{ github.event.issue.number }}
-          path: .autose/
+          path: |
+            .autose/
+            artifacts/
+          include-hidden-files: true
           retention-days: 14
