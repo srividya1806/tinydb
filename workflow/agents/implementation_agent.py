@@ -13,12 +13,12 @@ Your task is to implement the exact code changes specified in design.md.
 
 RULES:
 1. Only modify files identified in the design.
-2. Produce clean, idiomatic, syntactically valid Python code.
+2. Produce clean, idiomatic, syntactically valid Python code. Do NOT output placeholder text like [FULL REPLACEMENT] or bracketed comments.
 3. Preserve all existing behaviors and backward compatibility.
 4. Output your edits using explicit file blocks in the following exact format:
 
 ```file:path/to/file.py
-[FULL REPLACEMENT CONTENT OF THE FILE]
+# Full replacement content of the file in valid Python
 ```
 
 You may provide multiple ```file:path...``` blocks if multiple files need changes. Do not output conversational filler outside or around these blocks.
@@ -86,7 +86,15 @@ class ImplementationAgent:
 
         for rel_path, new_content in file_blocks:
             rel_path = rel_path.strip()
-            self.harness.write_file(rel_path, new_content)
+            # Clean accidental bracketed placeholders or instructions at file top
+            lines = new_content.splitlines()
+            cleaned_lines = []
+            for line in lines:
+                if re.match(r"^\s*\[(?:FULL REPLACEMENT|CODE|REPLACEMENT CONTENT|FULL CONTENT).*\]\s*$", line, re.IGNORECASE):
+                    continue
+                cleaned_lines.append(line)
+            clean_code = "\n".join(cleaned_lines)
+            self.harness.write_file(rel_path, clean_code)
             modified_files.append(rel_path)
 
         diff = self.harness.get_git_diff()

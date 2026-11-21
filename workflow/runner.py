@@ -142,23 +142,29 @@ class SDLCOrchestrator:
 
         if self.dry_run:
             diff_patch = "# Mock diff.patch\n+ # Applied changes"
-            modified_files = ["tinydb/table.py"]
-        else:
-            agent = ImplementationAgent(self.client, self.harness)
-            diff_patch, modified_files = agent.run(design_content, spec_content, error_feedback=error_feedback)
-
-        # Gate 3 verification check
-        agent = ImplementationAgent(self.client, self.harness)
-        ok, msg = agent.verify(modified_files)
-        print(f"[Gate 3 Check] {msg}")
-        if not ok:
-            self.state["status"] = "FAILED_STAGE_3"
             self.save_artifact("diff.patch", diff_patch)
-            self.save_state()
-            raise RuntimeError(f"Gate 3 Check Failed: {msg}")
+            return diff_patch
 
+        agent = ImplementationAgent(self.client, self.harness)
+        current_feedback = error_feedback
+        diff_patch = ""
+        last_msg = ""
+
+        for attempt in range(1, 4):
+            diff_patch, modified_files = agent.run(design_content, spec_content, error_feedback=current_feedback)
+            ok, msg = agent.verify(modified_files)
+            print(f"[Gate 3 Check] Attempt {attempt}: {msg}")
+            if ok:
+                self.save_artifact("diff.patch", diff_patch)
+                return diff_patch
+
+            last_msg = msg
+            current_feedback = f"Gate 3 Syntax Check Failed on attempt {attempt}: {msg}. Please fix the syntax error and ensure only valid Python code is emitted inside ```file:<path>``` blocks."
+
+        self.state["status"] = "FAILED_STAGE_3"
         self.save_artifact("diff.patch", diff_patch)
-        return diff_patch
+        self.save_state()
+        raise RuntimeError(f"Gate 3 Check Failed: {last_msg}")
 
     def execute_stage_4_testing(self, spec_content: str, diff_patch: str) -> Tuple[bool, str, Dict[str, Any]]:
         print("\n=======================================================")
@@ -218,9 +224,9 @@ Closes #{issue_number}
                 subprocess.run(["git", "add", "tinydb/", "tests/"], check=True)
                 subprocess.run(["git", "commit", "-m", pr_title, "--allow-empty"], check=True)
                 subprocess.run(["git", "push", "-u", "origin", branch_name, "--force"], check=True)
-                # Create PR via gh CLI
+                # Create PR via gh CLI with explicit repo and base
                 gh_proc = subprocess.run(
-                    ["gh", "pr", "create", "--title", pr_title, "--body", pr_body, "--head", branch_name],
+                    ["gh", "pr", "create", "--repo", "srividya1806/tinydb", "--base", "main", "--head", branch_name, "--title", pr_title, "--body", pr_body],
                     capture_output=True,
                     text=True,
                 )
@@ -229,7 +235,7 @@ Closes #{issue_number}
                 else:
                     # Fetch existing PR URL if already created
                     view_proc = subprocess.run(
-                        ["gh", "pr", "view", branch_name, "--json", "url", "-q", ".url"],
+                        ["gh", "pr", "view", branch_name, "--repo", "srividya1806/tinydb", "--json", "url", "-q", ".url"],
                         capture_output=True,
                         text=True,
                     )
@@ -267,7 +273,7 @@ Closes #{issue_number}
                 verdict = decision.get("verdict", "REQUEST_CHANGES")
                 gh_arg = "--approve" if verdict == "APPROVE" else "--comment"
                 subprocess.run(
-                    ["gh", "pr", "review", branch_name, gh_arg, "--body", review_md],
+                    ["gh", "pr", "review", branch_name, "--repo", "srividya1806/tinydb", gh_arg, "--body", review_md],
                     capture_output=True,
                     text=True,
                 )
