@@ -17,11 +17,11 @@ Options considered:
 3. **Tiered Hybrid Architecture**: Fast Flash models for operational/code authoring stages, paired with Pro (or specialized adversarial prompt tuning on Flash) for the Independent Reviewer stage.
 
 ## Decision
-We choose the **Tiered Hybrid Architecture**:
-- **Requirements Agent**: `gemini-2.5-flash` (or equivalent current fast tier). Fast, cost-efficient, and highly capable at extracting structured acceptance criteria.
-- **Design Agent**: `gemini-2.5-flash`. Rapidly cross-references `ARCHITECTURE.md` with source symbols.
-- **Implementation & Testing Agents**: `gemini-2.5-flash`. High code-completion throughput and near-instant feedback for test-driven refinement loops.
-- **Independent Reviewer Agent**: `gemini-2.5-pro` (fallback to `gemini-2.5-flash` with low temperature 0.1 and strict adversarial system prompting when quota is constrained). This ensures the reviewer possesses the reasoning depth necessary to catch subtle regressions and architectural divergence without sycophancy.
+We choose **Google Gemini 3.8 Flash**:
+- **Requirements Agent**: `gemini-3.8-flash`. Fast, cost-efficient, and highly capable at extracting structured acceptance criteria.
+- **Design Agent**: `gemini-3.8-flash`. Rapidly cross-references `ARCHITECTURE.md` with source symbols.
+- **Implementation & Testing Agents**: `gemini-3.8-flash`. High code-completion throughput and near-instant feedback for test-driven refinement loops.
+- **Independent Reviewer Agent**: `gemini-3.8-flash` with zero temperature (`temperature=0.0`) and strict adversarial system prompting. This ensures the reviewer evaluates diffs critically without sycophancy.
 
 ## Consequences
 ### Positive

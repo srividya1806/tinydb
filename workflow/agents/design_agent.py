@@ -33,7 +33,7 @@ List every file and function/class to be modified or created. Format as:
 
 
 class DesignAgent:
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-2.5-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
         self.client = client
         self.harness = harness
         self.model = model

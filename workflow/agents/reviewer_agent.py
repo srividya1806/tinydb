@@ -40,7 +40,7 @@ If ANY blocking issues or unhandled edge cases exist, your verdict MUST be `REQU
 
 
 class ReviewerAgent:
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-2.5-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
         self.client = client
         self.harness = harness
         self.model = model

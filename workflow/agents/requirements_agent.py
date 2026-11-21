@@ -35,7 +35,7 @@ List each acceptance criterion explicitly numbered (AC-1, AC-2, etc.) using Give
 
 
 class RequirementsAgent:
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-2.5-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
         self.client = client
         self.harness = harness
         self.model = model

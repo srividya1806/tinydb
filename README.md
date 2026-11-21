@@ -23,8 +23,7 @@ The system is designed according to rigorous software architecture principles:
 ## 2. Models & Cost Profile
 
 - **Primary Models**:
-  - `gemini-2.5-flash`: Requirements, Design, Implementation, and Testing agents. Highly cost-effective (~$0.075 / 1M tokens), high code generation speed.
-  - `gemini-2.5-pro` (or `gemini-2.5-flash` with low temperature 0.0 and strict adversarial prompt): Independent Reviewer Agent.
+  - `gemini-3.8-flash`: Requirements, Design, Implementation, Testing, and Reviewer agents. Highly cost-effective, near-instant sub-second response times, and state-of-the-art code generation.
 - **Total Benchmark Cost**: Less than $0.35 total across all 5 benchmark runs and 5 seeded PR evaluations.
 
 ---

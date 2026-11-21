@@ -30,7 +30,7 @@ Do not include commentary outside the code block.
 class TestAgent:
     __test__ = False
 
-    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-2.5-flash"):
+    def __init__(self, client: GeminiClient, harness: ToolHarness, model: str = "gemini-3.8-flash"):
         self.client = client
         self.harness = harness
         self.model = model

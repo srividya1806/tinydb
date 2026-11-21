@@ -307,7 +307,7 @@ def build_pdf(filename="report.pdf"):
         ],
         [
             Paragraph("<b>D6</b>: Models", table_text),
-            Paragraph("Hybrid: Gemini Flash (authoring) + Pro (review)", table_text),
+            Paragraph("Google Gemini 3.8 Flash tier across roles", table_text),
             Paragraph("Uniform Pro for all or uniform Flash for all", table_text),
             Paragraph("Balances rapid, low-cost code iteration (<$0.05/run) with deep adversarial review.", table_text),
             Paragraph("Accepted", table_text),
@@ -656,7 +656,7 @@ def build_pdf(filename="report.pdf"):
     story.append(Paragraph("6. Limitations & Threats to Validity", h1_style))
     story.append(Paragraph(
         "<b>1. Construct Validity (Test Suite Adequacy):</b> TinyDB features a fast, highly deterministic test suite (228 tests in 0.5s). In larger systems with flaky, asynchronous, or slow integration tests, feedback loops in Stage 4 could easily exceed runner timeout budgets or falsely attribute network flakes to implementation bugs."
-        "<br/><b>2. Internal Validity (Model Family Correlation):</b> Both the implementation and reviewer agents were powered by Google Gemini model variants (Flash and Pro). Although context was strictly isolated, shared pre-training corpora may still create correlated blind spots where both models overlook subtle logical flaws."
+        "<br/><b>2. Internal Validity (Model Family Correlation):</b> Both the implementation and reviewer agents were powered by Google Gemini 3.8 Flash. Although context was strictly isolated, shared pre-training corpora may still create correlated blind spots where both models overlook subtle logical flaws."
         "<br/><b>3. External Validity (Complexity Generalization):</b> All benchmark tasks involved localized modifications to 1-3 files. The workflow's performance on cross-cutting architectural migrations spanning dozens of microservices or polyglot repositories remains unverified.",
         body_style
     ))
