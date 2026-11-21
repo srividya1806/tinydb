@@ -61,7 +61,8 @@ def multiply(field: str, n: Union[int, float]) -> Callable[[MutableMapping], Non
     Multiply a given field in the document by ``n``.
     """
     def transform(doc: MutableMapping):
-        doc[field] *= n
+        if field in doc:
+            doc[field] *= n
 
     return transform
 

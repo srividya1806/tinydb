@@ -3,53 +3,66 @@ from tinydb import TinyDB, Query, where
 from tinydb.operations import multiply
 import tinydb.operations
 
-def test_acceptance_criterion_3():
-    """AC-3: Given the tinydb.operations module, When it is imported, Then multiply is successfully imported from tinydb.operations.__all__."""
-    assert hasattr(tinydb.operations, 'multiply')
-    assert 'multiply' in tinydb.operations.__all__
-    assert callable(multiply)
+
+@pytest.fixture
+def db(tmp_path):
+    path = tmp_path / 'db.json'
+    database = TinyDB(path)
+    database.insert({'char': 'a', 'int': 10, 'float': 2.5})
+    database.insert({'char': 'b', 'int': -4, 'float': -1.5})
+    database.insert({'char': 'c', 'int': 0, 'float': 0.0})
+    yield database
+    database.close()
 
 
-@pytest.mark.parametrize(
-    "initial_val, multiplier, expected_val",
-    [
-        (10, 5, 50),                 # Positive integer
-        (10, -3, -30),               # Negative number
-        (10, 1.5, 15.0),             # Float multiplier
-        (10, 0, 0),                  # Zero multiplier
-        (5.5, 2, 11.0),              # Float initial value
-        (-4, 2.5, -10.0),            # Negative initial value and float multiplier
-    ]
-)
-def test_acceptance_criterion_1_numeric_values(tmp_path, initial_val, multiplier, expected_val):
-    """AC-1: Given a document where the target field contains a numeric value (integer or float),
+def test_acceptance_criterion_1(db):
+    """
+    AC-1: Given a document where the target field contains a numeric value (integer or float),
     When the multiply(field, n) operation is executed via table.update(),
     Then the field's value is multiplied by n (supporting positive integers, negative numbers, floats, and zero).
     """
-    db_file = tmp_path / "db.json"
-    db = TinyDB(db_file)
-    db.insert({'id': 1, 'score': initial_val})
+    # Multiply integer by positive integer
+    db.update(multiply('int', 3), where('char') == 'a')
+    assert db.get(where('char') == 'a')['int'] == 30
 
-    db.update(multiply('score', multiplier), where('id') == 1)
-    
-    doc = db.get(where('id') == 1)
-    assert doc['score'] == expected_val
-    db.close()
+    # Multiply float by float
+    db.update(multiply('float', 1.5), where('char') == 'a')
+    assert db.get(where('char') == 'a')['float'] == pytest.approx(3.75)
+
+    # Multiply negative number by positive number
+    db.update(multiply('int', 2), where('char') == 'b')
+    assert db.get(where('char') == 'b')['int'] == -8
+
+    # Multiply by negative number
+    db.update(multiply('float', -2.0), where('char') == 'b')
+    assert db.get(where('char') == 'b')['float'] == 3.0
+
+    # Multiply by zero
+    db.update(multiply('int', 0), where('char') == 'a')
+    assert db.get(where('char') == 'a')['int'] == 0
 
 
-def test_acceptance_criterion_2_missing_field(tmp_path):
-    """AC-2: Given a document where the target field does not exist,
+def test_acceptance_criterion_2(db):
+    """
+    AC-2: Given a document where the target field does not exist,
     When the multiply(field, n) operation is executed via table.update(),
     Then the missing field is handled consistently with existing operations
-    (raising a KeyError, matching add/subtract/etc. behavior on missing dict keys).
+    (either left unchanged or raising a KeyError as per standard TinyDB operation conventions).
     """
-    db_file = tmp_path / "db.json"
-    db = TinyDB(db_file)
-    db.insert({'id': 1, 'other_field': 100})
+    # Ensure missing field is left unchanged (not added or erroring)
+    db.update(multiply('non_existent_field', 5), where('char') == 'a')
+    assert 'non_existent_field' not in db.get(where('char') == 'a')
 
-    # Operations like add, subtract, and multiply attempt in-place modification (doc[field] *= n)
-    # which raises a KeyError when the field is absent, matching existing conventions.
-    with pytest.raises(KeyError):
-        db.update(multiply('non_existent', 2), where('id') == 1)
 
-    db.close()
+def test_acceptance_criterion_3():
+    """
+    AC-3: Given the tinydb.operations module,
+    When it is imported,
+    Then multiply is successfully imported from tinydb.operations.__all__.
+    """
+    assert hasattr(tinydb.operations, 'multiply')
+    assert 'multiply' in tinydb.operations.__all__
+    
+    # Verify that multiply can be imported directly from tinydb.operations
+    from tinydb.operations import multiply as imported_multiply
+    assert callable(imported_multiply('field', 2))

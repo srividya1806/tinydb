@@ -36,6 +36,10 @@ def test_multiply(db):
     db.update(multiply('int', 0), where('char') == 'a')
     assert db.get(where('char') == 'a')['int'] == 0.0
 
+    # Test missing field handling
+    db.update(multiply('non_existent_field', 5), where('char') == 'a')
+    assert 'non_existent_field' not in db.get(where('char') == 'a')
+
 
 def test_set(db):
     db.update(set('char', 'xyz'), where('char') == 'a')
